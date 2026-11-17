@@ -1,0 +1,8 @@
+name: databricks_aws_deployment_05_data_vault_and_dwh
+version: 0.1.0
+targets:
+  - copilot
+  - gemini
+dependencies:
+  apm:
+    - github/awesome-copilot/skills/pytest-coverage

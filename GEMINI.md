@@ -1,0 +1,91 @@
+# Gemini Developer & Agent Guidelines
+
+Project: **Enterprise Data Vault 2.0 & Kimball Dimensional DWH on Databricks AWS**
+
+This document provides architectural standards, critical engineering constraints, and development workflows for Gemini agents working in this repository.
+
+---
+
+## 1. Architecture Overview
+- **Storage / Volume**: Incremental Parquet ingestion into Unity Catalog Managed Volume (`/Volumes/<catalog>/<schema>/<volume>/`).
+- **Bronze Layer**: Streaming ingestion via Auto Loader (`spark.readStream.format("cloudFiles")` or `read_files`) into append-only Delta tables with `_metadata`.
+- **Silver Layer (Data Vault 2.0)**:
+  - **Raw Vault**: Hubs (`hub_*`), Links (`lnk_*`), and Satellites (`sat_*`). Deterministic SHA-256 hash keys, insert-only.
+  - **Business Vault**: Point-in-Time (`pit_*`) snapshots, Bridge (`br_*`) tables, and Business Satellites (`sat_*_bv`).
+- **Gold Layer (Kimball Dimensional DWH)**:
+  - **Dimensions (`dim_*`)**: Conformed dimensions with SCD Type 1 (in-place) and SCD Type 2 (`__START_AT` / `__END_AT`).
+  - **Facts (`fct_*`)**: Transaction, Periodic Snapshot, and Accumulating Snapshot facts with explicitly declared grain.
+  - **Consumer Views (`vw_*`)**: Tailored for BI / SQL Analysts and ML Feature Store.
+
+---
+
+## 2. Critical Engineering Constraints
+1. **Modern Lakeflow Pipelines**:
+   - Always use `from pyspark import pipelines as dp` (never import deprecated `dlt`).
+   - Use `CREATE OR REFRESH STREAMING TABLE` or `CREATE OR REFRESH MATERIALIZED VIEW` (never `CREATE OR REPLACE`).
+2. **Data Vault 2.0 Hashing Standard**:
+   - Primary and foreign hash keys (`hk_*`) must be SHA-256 over trimmed, uppercase strings concatenated with delimiter `^^`.
+   - Coalesce null natural keys to `-1` sentinel values.
+   - Hash diffs: SHA-256 over alphabetically sorted payload columns coalesced with `'^^NULL^^'`.
+3. **Kimball Dimensional Modeling**:
+   - Fact tables must have an explicitly documented business grain.
+   - Use Databricks native `__START_AT` / `__END_AT` columns for SCD Type 2 dimension historical tracking.
+4. **Functional PySpark Principles**:
+   - Pure, single-responsibility functions residing in `src/python/modules/`.
+   - Composable transforms via `DataFrame.transform()`.
+   - Explicit column projections with `.select()` contracts; avoid row-by-row Python UDFs.
+5. **Lakehouse SQL Conventions**:
+   - Modular CTEs, `QUALIFY` clause for window rank/row_number filters, `GROUP BY ALL`.
+   - Avoid `ORDER BY` shuffles in intermediate queries.
+6. **Data Quality & DQX**:
+   - Implement expectations using `@dp.expect`, `@dp.expect_or_drop`, or `@dp.expect_or_fail`.
+   - Validate datasets against data contracts via Databricks Labs DQX.
+
+---
+
+## 3. Local Testing & Verification
+- Test all pure transformation logic locally without requiring a remote cluster:
+  ```bash
+  pytest -v
+  ```
+- Measure and enforce test coverage:
+  ```bash
+  pytest --cov=src/python/modules --cov-report=term-missing
+  ```
+- Run formatting and type-checking:
+  ```bash
+  ruff check .
+  ruff format --check .
+  mypy src/python/modules
+  ```
+
+---
+
+## 4. Deployment via Databricks Asset Bundles (DAB)
+- Deployment configuration: `databricks.yml`.
+- Standard bundle commands:
+  ```bash
+  databricks bundle validate
+  databricks bundle deploy --target dev
+  databricks bundle run data_vault_and_kimball_dwh_pipeline
+  ```
+
+---
+
+## 5. Skills Reference
+Domain skills are available in `.gemini/skills/`:
+- `databricks-spark-declarative-pipelines`
+- `databricks-data-vault-2-0`
+- `kimball-dimensional-modeling`
+- `pyspark-style-guide`
+- `lakehouse-sql-style-guide`
+- `databricks-dqx`
+- `functional-programming`
+- `databricks-bundles`
+- `databricks-jobs`
+- `pytest`
+- `pytest-coverage`
+- `databricks-mcps`
+- `databricks-aws-unity-catalog`
+- `databricks-aws-workspace`
+- `github-workflows`

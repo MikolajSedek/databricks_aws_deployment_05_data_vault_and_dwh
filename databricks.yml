@@ -1,0 +1,94 @@
+bundle:
+  name: databricks_data_vault_and_kimball_dwh
+
+artifacts:
+  default:
+    type: whl
+    build: uv build --wheel
+    path: .
+
+variables:
+  catalog:
+    description: "Target Unity Catalog name for the Lakehouse project"
+    default: "data_engineering_dev"
+
+resources:
+  pipelines:
+    data_vault_and_kimball_dwh_pipeline:
+      name: "[${bundle.target}] Data Vault 2.0 & Kimball DWH Lakeflow Pipeline"
+      catalog: ${var.catalog}
+      target: bronze
+      serverless: true
+      development: false
+      continuous: false
+      channel: CURRENT
+      libraries:
+        - notebook:
+            path: ./src/python/pipelines/lakeflow_data_vault_pipeline.py
+        - notebook:
+            path: ./src/python/pipelines/lakeflow_kimball_dwh_pipeline.py
+      environment:
+        dependencies:
+          - "${workspace.root_path}/artifacts/.internal/databricks_data_vault_and_kimball_dwh-0.1.4-py3-none-any.whl"
+      configuration:
+        "bundle.sourcePath": ${workspace.file_path}
+        "pipelines.maxFlowRetryAttempts": "0"
+        "pipelines.numUpdateRetryAttempts": "0"
+        "pipelines.numStreamRetryAttempts": "0"
+
+  jobs:
+    end_to_end_data_vault_dwh_workflow:
+      name: "[${bundle.target}] End-to-End Data Vault 2.0 & Kimball DWH Workflow"
+      description: >-
+        Appends incremental Parquet event batches in Managed Volume, runs the Lakeflow Declarative Pipeline
+        incrementally on Serverless Standard compute (enabling Enzyme incremental MV refresh), and validates DQX expectations.
+      performance_target: STANDARD
+      environments:
+        - environment_key: default
+          spec:
+            client: "1"
+            dependencies:
+              - "databricks-labs-dqx==0.17.0"
+              - "${workspace.root_path}/artifacts/.internal/databricks_data_vault_and_kimball_dwh-0.1.4-py3-none-any.whl"
+      tasks:
+        - task_key: generate_volume_parquet_events
+          description: "Provision catalog/schema/volume descriptions and append new synthetic Parquet batches to Managed Volume."
+          max_retries: 0
+          retry_on_timeout: false
+          disable_auto_optimization: true
+          notebook_task:
+            notebook_path: ./src/python/pipelines/generate_parquet_events.py
+            source: WORKSPACE
+          environment_key: default
+
+        - task_key: run_lakeflow_data_vault_dwh_pipeline
+          description: "Execute Lakeflow Declarative Pipeline incrementally across Data Vault 2.0 and Kimball DWH libraries."
+          depends_on:
+            - task_key: generate_volume_parquet_events
+          max_retries: 0
+          retry_on_timeout: false
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.data_vault_and_kimball_dwh_pipeline.id}
+            full_refresh: false
+
+        - task_key: validate_dqx_and_non_empty_tables
+          description: "Validate that all 37 tables across Bronze, Silver, and Gold are populated and pass DQX checks."
+          depends_on:
+            - task_key: run_lakeflow_data_vault_dwh_pipeline
+          max_retries: 0
+          retry_on_timeout: false
+          disable_auto_optimization: true
+          notebook_task:
+            notebook_path: ./src/python/pipelines/validate_and_audit_dq.py
+            source: WORKSPACE
+          environment_key: default
+
+targets:
+  dev:
+    mode: development
+    default: true
+    presets:
+      pipelines_development: false
+    workspace:
+      host: https://<your-databricks-workspace-url>
+      root_path: ~/.bundle/${bundle.name}/${bundle.target}
