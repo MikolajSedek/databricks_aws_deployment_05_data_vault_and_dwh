@@ -846,6 +846,7 @@ dev = [
     { name = "bandit" },
     { name = "black" },
     { name = "codespell" },
+    { name = "detect-secrets" },
     { name = "interrogate" },
     { name = "mcp" },
     { name = "mypy" },
@@ -867,6 +868,7 @@ requires-dist = [
     { name = "codespell", marker = "extra == 'dev'", specifier = ">=2.4.0" },
     { name = "databricks-labs-dqx", specifier = ">=0.17.0" },
     { name = "databricks-sdk", specifier = ">=0.167.0" },
+    { name = "detect-secrets", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "interrogate", marker = "extra == 'dev'", specifier = ">=1.7.0" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "mcp", marker = "extra == 'dev'", specifier = ">=1.0.0" },
@@ -929,6 +931,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/14/00/089a185f6737e9eefd4086aa5a6105bbc03c26a2396c12d98aa1aa5760f7/databricks_sdk-0.167.0.tar.gz", hash = "sha256:9ed5576e1e28a94d3e47f302d5e337f3dea47d7b27bd7938b9b5e0e06f27a428", size = 1307450, upload-time = "2026-11-16T04:37:09.267Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ac/c8/e46ca3eb4410c95110dd2659d1d16165d263c078dc07f0edcdc00b6b275f/databricks_sdk-0.167.0-py3-none-any.whl", hash = "sha256:be69845d5cea026f35aa681ae19bf92ee82212c954a7a6b51055e715a383ad9d", size = 1249565, upload-time = "2026-11-16T04:37:07.373Z" },
+]
+
+[[package]]
+name = "detect-secrets"
+version = "1.5.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/69/67/382a863fff94eae5a0cf05542179169a1c49a4c8784a9480621e2066ca7d/detect_secrets-1.5.0.tar.gz", hash = "sha256:6bb46dcc553c10df51475641bb30fd69d25645cc12339e46c824c1e0c388898a", size = 97351, upload-time = "2024-05-06T17:46:19.721Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/5e/4f5fe4b89fde1dc3ed0eb51bd4ce4c0bca406246673d370ea2ad0c58d747/detect_secrets-1.5.0-py3-none-any.whl", hash = "sha256:e24e7b9b5a35048c313e983f76c4bd09dad89f045ff059e354f9943bf45aa060", size = 120341, upload-time = "2024-05-06T17:46:16.628Z" },
 ]
 
 [[package]]

@@ -7,7 +7,7 @@ repos:
       - id: end-of-file-fixer
         files: ^(src|tests)/
       - id: check-yaml
-        files: ^(databricks\.yml|\.pre-commit-config\.yaml|\.yamllint\.yml|apm\.yml)$
+        files: ^(databricks\.yml|\.pre-commit-config\.yaml|\.yamllint\.yml|apm\.yml|bandit\.yaml)$
       - id: check-toml
       - id: check-merge-conflict
       - id: detect-aws-credentials
@@ -15,6 +15,13 @@ repos:
 
   - repo: local
     hooks:
+      - id: detect-secrets
+        name: detect-secrets
+        entry: uv run detect-secrets-hook --baseline .secrets.baseline
+        language: system
+        files: .*
+        exclude: ^(\.venv/|uv\.lock|apm\.lock\.yaml|\.secrets\.baseline)
+
       - id: ruff-check
         name: ruff check
         entry: uv run ruff check --fix src/python tests
@@ -38,7 +45,14 @@ repos:
 
       - id: bandit
         name: bandit
-        entry: uv run bandit -r src/python -ll -ii
+        entry: uv run bandit -c bandit.yaml -r src/python -ll -ii
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: bandit-secrets
+        name: bandit secret scanning
+        entry: uv run bandit -c bandit.yaml -r src/python -t B105,B106,B107 -l
         language: system
         types: [python]
         pass_filenames: false
@@ -58,7 +72,7 @@ repos:
 
       - id: yamllint
         name: yamllint
-        entry: uv run yamllint -c .yamllint.yml databricks.yml .pre-commit-config.yaml
+        entry: uv run yamllint -c .yamllint.yml databricks.yml .pre-commit-config.yaml bandit.yaml
         language: system
         types: [yaml]
         pass_filenames: false
