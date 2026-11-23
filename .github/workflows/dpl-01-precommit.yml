@@ -38,7 +38,7 @@ jobs:
           restore-keys: |
             pre-commit-${{ runner.os }}-
 
-      # Install project dependencies including dev extra (pre-commit, ruff, black, mypy, bandit, yamllint)
+      # Install project dependencies including dev extra (pre-commit, ruff, black, mypy, bandit, detect-secrets, yamllint)
       - name: Install dependencies with uv
         run: uv sync --frozen --all-extras
 
@@ -54,7 +54,7 @@ jobs:
           echo "- **Ruff Linter & Formatter**: Validated" >> $GITHUB_STEP_SUMMARY
           echo "- **Black Code Formatter**: Validated" >> $GITHUB_STEP_SUMMARY
           echo "- **Mypy Static Typing**: Validated" >> $GITHUB_STEP_SUMMARY
-          echo "- **Bandit Security Audit**: Validated" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bandit Security Audit & Secret Detection**: Validated" >> $GITHUB_STEP_SUMMARY
+          echo "- **Yelp detect-secrets & AWS Key Detection**: Validated" >> $GITHUB_STEP_SUMMARY
           echo "- **Interrogate Docstrings**: $\ge 95\%$ coverage" >> $GITHUB_STEP_SUMMARY
           echo "- **Codespell & Yamllint**: Clean" >> $GITHUB_STEP_SUMMARY
-          echo "- **Secret Detection**: Clean" >> $GITHUB_STEP_SUMMARY

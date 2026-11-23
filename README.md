@@ -146,15 +146,21 @@ uv sync --extra dev
 ```
 
 ### Run Static Analysis & Pre-Commit Checks
-```powershell
+`powershell
+# Run the complete suite of pre-commit hooks (including secret detection)
+uv run pre-commit run --all-files
+
+# Or run individual verification tools
 .venv\Scripts\ruff.exe check src/python tests
 .venv\Scripts\black.exe --check --line-length=120 src/python tests
 .venv\Scripts\mypy.exe src/python tests
-.venv\Scripts\bandit.exe -r src/python -ll -ii
+.venv\Scripts\bandit.exe -c bandit.yaml -r src/python -ll -ii
+.venv\Scripts\bandit.exe -c bandit.yaml -r src/python -t B105,B106,B107 -l
+.venv\Scripts\detect-secrets-hook.exe --baseline .secrets.baseline src/ tests/ *.yml *.yaml *.md
 .venv\Scripts\interrogate.exe -v --fail-under 95 src/python
 .venv\Scripts\codespell.exe src/python tests README.md databricks.yml
-.venv\Scripts\yamllint.exe -c .yamllint.yml databricks.yml .pre-commit-config.yaml
-```
+.venv\Scripts\yamllint.exe -c .yamllint.yml databricks.yml .pre-commit-config.yaml bandit.yaml
+`
 
 ---
 
